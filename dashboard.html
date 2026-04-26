@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>AI Risk Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #2c3e50;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>AI Legal Compliance Dashboard</h1>
+    <p>Active Alerts: <span id="alert-count">Loading...</span></p>
+
+    <input type="text" id="search-bar" placeholder="Enter subpoena keywords (e.g., EU AI Act)..." onkeyup="executeDiscovery()">
+
+    <table>
+        <thead>
+            <tr>
+                <th>System Status</th>
+                <th>Law Reference</th>
+                <th>Risk Score</th>
+                <th>Required Action</th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+        </tbody>
+    </table>
+
+    <script>
+        // THE DESK (Global Variable): We create an empty box to hold the files from the API.
+        let globalCaseFiles = [];
+
+        // This JavaScript 'fetches' the JSON from your Python API exactly once.
+        fetch('http://127.0.0.1:8000/api/risk-dashboard')
+            .then(response => {
+                if (!response.ok) throw new Error("Server not responding");
+                return response.json();
+            })
+            .then(data => {
+                console.log("Data received: ", data); 
+                globalCaseFiles = data.registry_data; // Put the data in the box on our desk
+                document.getElementById('alert-count').innerText = data.active_alerts;
+
+                renderTable(globalCaseFiles); // Draw the table for the first time
+            })
+
+            .catch(error => {
+                document.getElementById('alert-count').innerText = "CONNECTION ERROR - Is Python running?";
+                console.error(error);
+            });
+            
+            // 3. THE COURTROOM (Render Function): This draws the data on to the screen.
+        function renderTable(dataToDraw) {
+                const tbody = document.getElementById('table-body');
+                tbody.innerHTML = "";
+
+                dataToDraw.forEach(item => {
+                    let scoreColor = item.severity_score >= 8 ? "red" : (item.severity_score >=5 ? "orange" : "green");
+
+                    const row = `<tr>
+                        <td><strong>${item.system_status}</strong></td>
+                        <td>${item.law_title}</td>
+                        <td style="color: ${scoreColor}; font-weight: bold;">${item.severity_score} / 10</td>
+                        <td>${item.required_action}</td>
+                    </tr>`;
+                    tbody.innerHTML += row;
+                })
+
+            }
+
+            // 4. THE DISCOVERY PROCESS (Filter Function): This runs every time you type a letter.
+            function executeDiscovery() {
+                // Get whatever the user typed and make it lowercase so "EU" and "eu" match.
+                const query = document.getElementById('search-bar').value.toLowerCase();
+
+                // Sift through the box on our desk. Keep only the items that match the query.
+                const filteredFiles = globalCaseFiles.filter(item =>
+                    item.law_title.toLowerCase().includes(query) ||
+                    item.system_status.toLowerCase().includes(query)
+                );
+
+                // Draw the table again, but only with the filtered files.
+                renderTable(filteredFiles);
+            }
+        </script>
+
+</body>
+
+</html>
