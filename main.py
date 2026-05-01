@@ -1,8 +1,29 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
+import logging
 
 app = FastAPI()
+
+# This creates a filed called 'system_audit.log' and records everything at the INFO level or higher.
+logging.basicConfig(
+    filename='system_audit_log',
+    level=logging.INFO,
+    format='%(acstime)s - %(levelname)s - %(message)s'
+)
+
+# 2 Inside your API:
+def evaluate_risk(law_title, severity_score):
+    logging.info(f"New case received: Evaluating compliance for {law_title}")
+
+    if severity_score >= 8:
+        # This writes permanently to your log file, not just the screen
+        logging.critical(f"VIOLATION DETECTED: {law_title} scored {severity_score}/10.")
+        return "MANDATORY AUDIT"
+    else:
+        logging.info("System falls within acceptable legal parameters.")
+        return "SAFE"
+    
 
 app.add_middleware(
     CORSMiddleware,
