@@ -2,8 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import logging
+import os
+from dotenv import load_dotenv
 
 app = FastAPI()
+
+load_dotenv()
+
+my_secret = os.getenv("SECRET_COMPLIANCE_KEY")
+print(f"My secure key is loaded: {my_secret}")
 
 # This creates a filed called 'system_audit.log' and records everything at the INFO level or higher.
 logging.basicConfig(
